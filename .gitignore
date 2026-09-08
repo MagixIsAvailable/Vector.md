@@ -1,0 +1,47 @@
+# --- Python ---
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# --- Secrets / certs / keys (NEVER commit real ones) ---
+*.pem
+*.crt
+*.key
+id_ed25519*
+id_rsa*
+.env
+.anki_vector/
+sdk_config.ini
+norton-*.pem
+certs/
+
+# --- Personal data / PII (real house photos, real logs, real conversations) ---
+snapshots/
+captures/
+videos/
+memory/
+vault_sync/
+cube_dataset/
+
+# --- Machine-specific junk / debug cruft ---
+ctx_debug.txt
+*.log
+*.log.txt
+*.bak
+*.bak.*
+charge_log*.csv
+drain_*.csv
+watchdog*.log
+brain_proxy.out.log
+blend_*.log
+
+# --- Large/generated binaries (document how to fetch/regenerate instead) ---
+*.pt
+piper_voices/
+hums/*.wav
+
+# --- OS noise ---
+.DS_Store
+Thumbs.db
