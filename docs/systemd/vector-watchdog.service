@@ -1,0 +1,15 @@
+[Unit]
+Description=Vector watchdog (danger reflexes: picked up/put down/cliff, motion/sound turns, clap-to-dance)
+After=network-online.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+WatchdogSec=60
+WorkingDirectory=/home/<you>/vector-mcp
+ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/vector_watchdog.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=n8n
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=PATH=/home/<you>/.nvm/versions/node/<version>/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/home/<you>
+ExecStart=/home/<you>/.nvm/versions/node/<version>/bin/n8n start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

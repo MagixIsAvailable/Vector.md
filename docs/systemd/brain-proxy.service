@@ -1,0 +1,14 @@
+[Unit]
+Description=Vector brain proxy (bridges wire-pod and Ollama)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/<you>/vector-mcp
+Environment=VECTOR_BRAIN_MODEL=qwen2.5:3b-instruct
+ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/brain_proxy.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

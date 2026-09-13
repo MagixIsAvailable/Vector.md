@@ -98,13 +98,58 @@ Vector (robot) <--BLE/WiFi--> wire-pod (local server, replaces Anki cloud)
                           knowledge-graph endpoint
                                    |
                             brain_proxy.py  <---->  Ollama (local LLM, on-device)
+                                   |                      ^
+                        (tool-calling: request_capability) |
+                                   |                      |
+                            /run/<name> HTTP bridge -------+
+                                   ^  (daily / weekly / babysitter /
+                                   |   proactive / mindspeak)
                                    |
-                        (tool-calling: request_capability)
+                            n8n (Schedule Trigger -> HTTP Request node)
+                                   |
+              vector_watchdog.py  (always-on, connects directly, no n8n)
 
-vector_mcp_server.py  <--MCP (stdio/HTTP)-->  your AI agent of choice / n8n
+vector_mcp_server.py  <--MCP (stdio/HTTP)-->  your AI agent of choice
         |
    controls robot directly via wire-pod's Vector SDK fork
 ```
+
+**Three tiers, three different dependency stories — worth understanding
+before you assume something is required when it isn't, or optional when
+it isn't:**
+
+1. **Always-on core — no dependency on anything else here.**
+   `brain_proxy.py` (conversation) and `vector_watchdog.py` (pickup/cliff/
+   motion/sound reflexes) are real daemons that connect to Vector directly
+   and just run. Kill n8n, kill the MCP server, doesn't matter — these two
+   keep working exactly as before.
+2. **Scheduled/proactive layer — needs n8n.** Idle humming, greetings,
+   mood shifts, curiosity scans, reminders, the battery watchdog schedule,
+   diary/reflection, and daily/weekly self-improvement passes are **not**
+   background loops — `vector_life.py`/`proactive.py`/`self_improve.py`/
+   `battery_babysitter.py`/`speak_mind.py` run once and exit each time.
+   Something has to trigger them on a schedule, and that's n8n's whole job
+   here. No n8n running = none of this fires, ever, even though the
+   scripts themselves are fine.
+3. **Operator/dev control — optional, human-in-the-loop only.**
+   `vector_mcp_server.py` exists purely so an AI agent (Claude Code, or
+   any other MCP client) can help *you* drive him, inspect his state, or
+   change his code interactively. Vector's own personality/reflexes don't
+   need an agent connected at all — MCP is a control surface for humans +
+   AI collaborating on the project, not part of his runtime.
+
+**Why an HTTP bridge instead of n8n just running the scripts directly**:
+on this build n8n's "Execute Command" node is disabled (a real security
+hardening choice, not a bug) — n8n workflows can't shell out to arbitrary
+commands. So `brain_proxy.py` exposes a small allow-listed
+`GET/POST /run/<name>` endpoint (`daily`, `weekly`, `babysitter`,
+`proactive`, `mindspeak` — a fixed dict, nothing dynamic/injectable) that
+runs the matching script and returns its stdout/stderr as JSON. n8n's
+Schedule Trigger nodes just call that endpoint over plain HTTP instead of
+executing anything themselves. If you're setting this up yourself and
+want a different security posture, you could re-enable Execute Command
+instead and skip the HTTP layer — this pattern exists because of a
+specific hardening decision made here, not because it's the only way.
 
 ## Installation
 
@@ -153,7 +198,65 @@ venv/bin/python brain_proxy.py
 In wire-pod's web UI, set the knowledge-graph provider to "custom" with
 endpoint `http://localhost:8590/v1`.
 
-### 6. Register the MCP server
+### 6. Set up n8n (needed for anything proactive/autonomous — see [Architecture](#architecture))
+
+Without this step, Vector will still talk when spoken to (`brain_proxy.py`)
+and still react to being picked up/dropped (`vector_watchdog.py`) — but
+he'll never say anything *unprompted*, no idle humming, no curiosity, no
+diary. That all depends on n8n actually running and triggering things.
+
+Install n8n on the Pi (or any machine that can reach the Pi over HTTP —
+doesn't have to be co-located):
+```
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+nvm install --lts
+npm install -g n8n
+```
+
+Run it once manually first to confirm it starts (`n8n start`, check
+`http://<pi-ip>:5678` loads in a browser), then make it survive reboots
+as a **user-level** systemd service (no `sudo`, works fine on a
+single-user Pi):
+```
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/n8n.service <<'EOF'
+[Unit]
+Description=n8n
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=PATH=/home/<you>/.nvm/versions/node/<version>/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=/home/<you>
+ExecStart=/home/<you>/.nvm/versions/node/<version>/bin/n8n start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl --user daemon-reload
+systemctl --user enable --now n8n.service
+loginctl enable-linger $USER   # lets it run even when you're not SSH'd in
+```
+
+Then, in n8n's web UI (`http://<pi-ip>:5678`), build one workflow per
+script you want scheduled — each is just two nodes:
+**Schedule Trigger** (pick an interval, e.g. every 10 min for proactive
+speech, every 5 min for mindspeak, daily/weekly for self-improve) →
+**HTTP Request** node calling `GET http://localhost:8590/run/<name>`
+where `<name>` is one of `daily`, `weekly`, `babysitter`, `proactive`,
+`mindspeak`. That's the entire integration — no credentials, no extra
+n8n nodes needed, since `brain_proxy.py` already does the real work and
+just returns JSON.
+
+Same `systemctl --user` + `loginctl enable-linger` pattern is worth using
+for `brain_proxy.py` and `vector_watchdog.py` too if you want the whole
+stack to survive a reboot without you needing to SSH in and restart
+things by hand — see the unit files this build actually uses in
+[docs/systemd/](./docs/systemd/) as a starting template.
+
+### 7. Register the MCP server (optional — human/AI operator control, not required for Vector to function)
 
 From whatever machine runs your AI agent (doesn't have to be the Pi):
 
@@ -165,7 +268,7 @@ claude mcp add vector --env VECTOR_OPERATOR=<yourname> -- ssh -i <key> <user>@<p
 bridge is only there because this build's agent runs on a separate
 Windows machine.)
 
-### 7. Say hi
+### 8. Say hi
 
 Ask your agent to call `vector_say` with a test phrase, or just talk to
 Vector out loud once wire-pod's voice pipeline confirms it started (look
@@ -204,6 +307,27 @@ The short version — full diagnosis and fixes are in **DEVLOG.md**:
 - **`drive_straight` silently no-ops while Vector is docked** — it returns
   OK in under a second with zero movement. Check `robot.status.is_on_charger`
   and call `drive_off_charger()` first if needed.
+- **`vector_watchdog.py` will crash-loop forever (harmlessly) if Vector is
+  simply offline** — no battery, WiFi drop, screen asleep, whatever. It's
+  not a bug: it can't do anything without a live connection, so it fails
+  fast and `systemd` retries it every ~10s indefinitely. Seeing hundreds
+  or thousands of restarts in `systemctl --user status` doesn't
+  necessarily mean anything is broken in the code — check whether the
+  robot itself is actually reachable first (`ping <robot-ip>`) before
+  assuming it's a real bug.
+- **`journalctl` can rotate crash logs out from under you** if a service
+  is restarting every few seconds — by the time you run
+  `journalctl --user -u <service>` separately it may already say
+  "No journal files were found" even though `systemctl status` just
+  showed you log lines seconds ago. If that happens, stop the service and
+  run the script directly in the foreground once
+  (`venv/bin/python3 whatever.py`) to catch the real traceback instead of
+  chasing the journal.
+- **n8n's "Execute Command" node may be disabled** on hardened instances
+  — if your workflows can't shell out, don't fight it; add a small
+  allow-listed HTTP endpoint to a service you already have running
+  instead (see `brain_proxy.py`'s `/run/<name>` route) and call that from
+  an HTTP Request node.
 
 ## Credits
 
