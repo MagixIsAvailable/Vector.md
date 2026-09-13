@@ -25,6 +25,26 @@ memory/
 vault_sync/
 cube_dataset/
 
+# --- Blanket image block - Mike's real face/room show up in a lot of these
+# (camera captures, face pngs, screenshots), so no image gets committed by
+# default anywhere in the repo, not just the dirs above. If a real
+# documentation screenshot is ever needed, add an explicit
+# !path/to/that_one_file.png exception rather than removing this block. ---
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.webp
+
+# --- Third-party SDK, cloned locally for dev reference - NOT ours to
+# republish, has its own repo/license/nested .git. See README for the
+# real upstream source and clone instructions. ---
+wirepod-sdk-src/
+
+# --- Not part of this project (unrelated Blender scratch script) ---
+inspect_molecule.py
+
 # --- Machine-specific junk / debug cruft ---
 ctx_debug.txt
 *.log

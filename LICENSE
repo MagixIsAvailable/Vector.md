@@ -26,9 +26,11 @@ This project builds on and interoperates with wire-pod
 (https://github.com/kercre123/wire-pod) over its local HTTP/gRPC API — it
 does not vendor or redistribute wire-pod's own code.
 
-`wirepod-sdk-src/` contains a copy of Anki's original Vector Python SDK
-(Copyright (c) 2018 Anki Inc.), licensed separately under Apache License
-2.0 — see `wirepod-sdk-src/LICENSE.txt`. That license text and its
-copyright notices must stay with those files; this repo's MIT license
-applies only to the code written for this project, not to that vendored
-SDK.
+This repo also does not vendor the Vector Python SDK fork
+(https://github.com/kercre123/wirepod-vector-python-sdk, itself based on
+Anki's original SDK, Copyright (c) 2018 Anki Inc., Apache License 2.0).
+Install it yourself per the README's setup instructions
+(`pip install git+https://github.com/kercre123/wirepod-vector-python-sdk.git`)
+rather than expecting a local copy in this repo — its own license terms
+stay with that upstream project, not this one. This repo's MIT license
+applies only to the code written for this project.
