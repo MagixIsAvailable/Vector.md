@@ -1,5 +1,7 @@
 # Vector MCP — give an abandoned Anki Vector a local LLM brain
 
+[![Buy Me a Coffee](https://img.shields.io/badge/buy%20me%20a-coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/magixb)
+
 Resurrect an Anki Vector 1.0 robot (orphaned when Anki went bankrupt in
 2019) using [wire-pod](https://github.com/kercre123/wire-pod), then give
 him a real local AI brain — no cloud, no subscriptions, no Anki servers,
