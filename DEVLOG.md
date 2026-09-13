@@ -3,7 +3,7 @@
 **This is the full build diary.** For the clean public-facing overview,
 installation steps, and project scope, see [README.md](./README.md).
 
-Exposes Mike's Anki Vector 1.0 ("Vector-E7V8", serial `0030219a`, IP `192.168.1.50`)
+Exposes Mike's Anki Vector 1.0 ("Vector-E7V8", serial `0030219a`, )
 as MCP tools so any MCP client (Claude Code, Claude Desktop, n8n) can control him.
 
 Set up 2026-08-07 with Claude.
