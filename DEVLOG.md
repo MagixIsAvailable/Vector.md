@@ -3,8 +3,10 @@
 **This is the full build diary.** For the clean public-facing overview,
 installation steps, and project scope, see [README.md](./README.md).
 
-Exposes Mike's Anki Vector 1.0 ("Vector-E7V8", serial `0030219a`, )
-as MCP tools so any MCP client (Claude Code, Claude Desktop, n8n) can control him.
+Exposes Mike's Anki Vector 1.0 (name/serial/IP redacted for public release
+— see `VECTOR_ROBOT_NAME`/`VECTOR_ROBOT_SERIAL`/`VECTOR_ROBOT_IP` in your
+own `.env`) as MCP tools so any MCP client (Claude Code, Claude Desktop,
+n8n) can control him.
 
 Set up 2026-08-07 with Claude.
 
@@ -46,7 +48,7 @@ Every tool call is logged with WHO did it (mike / claude / hermes / n8n):
 Operator identity = `VECTOR_OPERATOR` env var set at server launch:
 - Claude Code: registered with `--env VECTOR_OPERATOR=claude` ✅
 - HTTP mode (`--http`): defaults to `n8n` ✅
-- **Hermes (WSL)**: ✅ `hermes mcp add vector --command /home/magic/vector-sdk/bin/python
+- **Hermes (WSL)**: ✅ `hermes mcp add vector --command /home/<wsl-user>/vector-sdk/bin/python
   --args /mnt/c/Users/mike/vector-mcp/vector_mcp_server.py --env VECTOR_OPERATOR=hermes`
   — points at this shared file; the server's `_user_base()` maps the `C:\...` paths
   to `/mnt/c/...` under WSL, so claude and hermes write to the same logbook/memory/vault.
@@ -213,9 +215,9 @@ gRPC port 443, re-signing his cert with Norton's
 connection with `CERTIFICATE_VERIFY_FAILED`. Norton's UI toggles/exclusions did
 NOT stop it.
 
-Fix: `~/.anki_vector/Vector-E7V8-0030219a.cert` is a **dual-trust bundle**:
+Fix: `~/.anki_vector/<robot-name>-<robot-serial>.cert` is a **dual-trust bundle**:
 1. The genuine wire-pod session cert (backup: `.cert.bak`, re-downloadable from
-   `http://localhost:8080/session-certs/0030219a`)
+   `http://localhost:8080/session-certs/<robot-serial>`)
 2. Norton's self-signed root CA (exported from the Windows cert store,
    `Cert:\LocalMachine\Norton SSL Scanner Cache`; copy in
    `norton-selfsigned-root.pem`)
@@ -254,8 +256,8 @@ venv\Scripts\python.exe -c "import vector_mcp_server as v; print(v.vector_get_ba
 
 ## Notes / gotchas
 
-- Vector must be awake, on WiFi (2.4 GHz only), and reachable at `192.168.1.50`
-  (consider a DHCP reservation so his IP never changes).
+- Vector must be awake, on WiFi (2.4 GHz only), and reachable at
+  `<VECTOR_ROBOT_IP>` (consider a DHCP reservation so his IP never changes).
 - Each tool call opens a short-lived connection and takes behavior control —
   Vector pauses his autonomous behavior during commands. Expect ~2-4s latency.
 - `vector_drive` auto-undocks first: `drive_straight` SILENTLY NO-OPS while
@@ -268,13 +270,14 @@ venv\Scripts\python.exe -c "import vector_mcp_server as v; print(v.vector_get_ba
   out for Python 3.12 — already handled in the fork, patched locally too.
 - For n8n: run the server in HTTP mode:
   `venv\Scripts\python.exe vector_mcp_server.py --http`
-  Endpoint: `http://localhost:8385/mcp` (from WSL/Hermes: `http://172.26.176.1:8385/mcp`).
+  Endpoint: `http://localhost:8385/mcp` (from WSL/Hermes: `http://<wsl-gateway-ip>:8385/mcp`,
+  find yours with `cat /etc/resolv.conf` inside WSL).
   In n8n, use the MCP Client Tool node with that URL (streamable-HTTP transport).
   Note: HTTP mode must be running for n8n to reach it — for permanence, add a
   Task Scheduler entry at logon. Stdio mode (Claude/Hermes) needs no running server.
 - Hermes (WSL) points at THIS shared server file with his venv
-  (`/home/magic/vector-sdk/bin/python`) and `VECTOR_OPERATOR=hermes` — no parallel
-  copy; the dual-trust cert lives at `/home/magic/.anki_vector/`.
+  (`/home/<wsl-user>/vector-sdk/bin/python`) and `VECTOR_OPERATOR=hermes` — no
+  parallel copy; the dual-trust cert lives at `/home/<wsl-user>/.anki_vector/`.
 - Only one client holds behavior control at a time — simultaneous commands from
   Claude/Hermes/n8n will preempt each other harmlessly.
 
