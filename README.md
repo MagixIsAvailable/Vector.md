@@ -376,8 +376,8 @@ The short version — full diagnosis and fixes are in **DEVLOG.md**:
 ## Support
 
 If this helped you resurrect your own Vector, consider [buying me a
-coffee](#) — everything here stays free and open either way, it just
-helps keep the lights on for more of this.
+coffee](https://buymeacoffee.com/magixb) — everything here stays free and
+open either way, it just helps keep the lights on for more of this.
 
 ## License
 
