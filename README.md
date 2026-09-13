@@ -22,8 +22,12 @@ weeks. Full blow-by-blow of every bug and how it was found and fixed:
 Anki went bankrupt in 2019, these show up used/thrifted for very little
 ✅ You're willing to spend real time flashing custom firmware (the fiddly
 part, not really this project's fault — it's a BLE flashing process)
-✅ You have or can get a **Raspberry Pi 5 (8GB)** — this is the only
-config actually tested, see [Hardware](#hardware) below
+✅ You have a **brain host** to run the software on — a Raspberry Pi 5
+(cheap, low-power, meant to stay on 24/7) or just your existing desktop/
+laptop (this was actually built and tested on a Windows desktop with an
+RTX 3090 *first*, then ported to a Pi once it worked — the Pi's only
+advantage is being cheap enough to leave running all the time; see
+[Hardware](#hardware) below for both paths)
 ✅ You're okay with a small local AI (think "occasionally says something
 slightly odd," not GPT-4-level polish) in exchange for zero ongoing cost
 and zero cloud dependency
@@ -76,19 +80,23 @@ protocol. What this project adds on top:
 | Component | Spec | Status |
 |---|---|---|
 | Robot | Anki Vector 1.0, flashed to Escape Pod firmware | required; 2.0 untested |
-| Brain host | **Raspberry Pi 5, 8GB RAM** | ✅ the only config actually verified — runs wire-pod + Ollama + the brain proxy + n8n + the watchdog all at once, with real memory pressure already visible at 8GB (don't go smaller) |
-| Brain host, alternatives | Pi 5 4GB, Pi 4 (any RAM) | ⚠️ untested — probably too tight for the full stack together, might work if you run n8n elsewhere instead |
-| LLM | `qwen2.5:3b-instruct` via [Ollama](https://ollama.com) | ~2.4s/reply, ~6 tok/s on the Pi 5's CPU — no GPU involved anywhere in this build |
+| Brain host | **Raspberry Pi 5, 8GB RAM** | ✅ the config this README's install steps and Known Issues are written against — runs wire-pod + Ollama + the brain proxy + n8n + the watchdog all at once, with real memory pressure already visible at 8GB (don't go smaller). Cheap enough to leave running 24/7, which is the only reason it's the recommended target. |
+| Brain host, alternative | **Any desktop/laptop (Windows/Linux/Mac)** | ✅ actually how this project started — built and run for weeks on a Windows desktop with an RTX 3090 before ever touching a Pi. Nothing in the code is Pi-specific (`vector_life.py` explicitly branches on `os.name` for platform differences); the Pi is a deployment choice for 24/7 uptime at low power draw, not a requirement. If your desktop is already on most of the time anyway, skip the Pi entirely and run everything here instead. |
+| Brain host, alternatives (Pi) | Pi 5 4GB, Pi 4 (any RAM) | ⚠️ untested — probably too tight for the full stack together, might work if you run n8n elsewhere instead |
+| LLM | `qwen2.5:3b-instruct` via [Ollama](https://ollama.com) | ~2.4s/reply, ~6 tok/s on the Pi 5's CPU, no GPU needed. On a desktop with a real GPU you're not limited to this — the original build ran a 20B model via LM Studio on an RTX 3090 with no issues; the small CPU-only model is a Pi-specific concession, not a hard project limit. |
 | Vision | YOLO11-nano via `ultralytics` | CPU is fine, ~100ms/frame |
-| Automation | [n8n](https://n8n.io) (self-hosted) | can run on the Pi itself or a separate machine |
+| Automation | [n8n](https://n8n.io) (self-hosted) | can run on the Pi itself, on your desktop, or a separate machine entirely |
 | Knowledge base | Obsidian (optional) | any Markdown-writing target works; this is just where we chose to put it |
 
 **A note on the LLM choice**: small local models are genuinely limited —
 don't expect ChatGPT-level conversation. `qwen2.5:3b-instruct` was chosen
 specifically because it *reliably replies at all* on CPU-only ARM
-hardware. Bigger "smarter" models we tried either need a GPU we didn't
-want to require, or turned out to be reasoning models that silently return
-empty replies (see [Known Issues](#known-issues-the-ones-that-will-bite-you-too)).
+hardware — that's a Pi constraint, not a project constraint. If you're
+running the desktop path with a real GPU, feel free to point `brain_proxy.py`
+at something bigger via Ollama or LM Studio; just watch out for reasoning
+models silently returning empty replies (see
+[Known Issues](#known-issues-the-ones-that-will-bite-you-too)) regardless
+of which host you're on.
 
 ## Architecture
 
@@ -164,10 +172,23 @@ over Bluetooth. **Expect this to not work first try** — Bluetooth stack
 quirks are common, not a sign you did something wrong. See DEVLOG for a
 real account of what went wrong here the first time.
 
-### 2. Set up your Raspberry Pi
+### 2. Set up your brain host — Raspberry Pi, or just your desktop
 
-Fresh Raspberry Pi OS (64-bit) install, SSH enabled. Install
-[Ollama](https://ollama.com/download/linux) and pull the model:
+**Pick one:**
+- **Raspberry Pi** (recommended if you want this running 24/7 without
+  tying up your main computer) — fresh Raspberry Pi OS (64-bit) install,
+  SSH enabled.
+- **Your existing desktop/laptop** (Windows/Linux/Mac, GPU optional) —
+  this is genuinely how the project was first built and run for weeks,
+  the Pi came later purely for 24/7 uptime at low power. Nothing below is
+  Pi-specific; just run it where you already are. If you're on Windows,
+  the same `pip`/`ollama` commands work in PowerShell — swap `venv/bin/`
+  for `venv\Scripts\` and skip the Linux install script for Ollama in
+  favor of the [Windows installer](https://ollama.com/download/windows).
+
+Either way, install [Ollama](https://ollama.com/download) and pull the
+model (or point `VECTOR_BRAIN_MODEL` at something bigger later if you're
+on a GPU-equipped desktop — see [Hardware](#hardware)):
 ```
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen2.5:3b-instruct
@@ -255,6 +276,19 @@ for `brain_proxy.py` and `vector_watchdog.py` too if you want the whole
 stack to survive a reboot without you needing to SSH in and restart
 things by hand — see the unit files this build actually uses in
 [docs/systemd/](./docs/systemd/) as a starting template.
+
+**On the desktop path instead of a Pi**: there's no systemd, so use
+**Task Scheduler** to run each script "at log on" instead (this is
+exactly how the original Windows-desktop build kept things running before
+the Pi migration) — Task Scheduler → Create Task → Trigger: "At log on" →
+Action: start `venv\Scripts\python.exe` with the script path as an
+argument, one task per always-on script (`brain_proxy.py`,
+`vector_watchdog.py`, and n8n itself if you installed it locally too). No
+`Restart=on-failure` equivalent out of the box — if that matters to you,
+wrap the python call in a small retry loop, or just accept that a crash
+needs a manual restart on the desktop path (that was the actual tradeoff
+made originally; systemd's auto-restart was one of the real reasons the
+Pi ended up being worth the migration).
 
 ### 7. Register the MCP server (optional — human/AI operator control, not required for Vector to function)
 
