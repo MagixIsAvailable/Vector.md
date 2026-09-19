@@ -317,6 +317,50 @@ for `wire-pod started successfully!` in its logs — the webserver
 responding is *not* proof the voice pipeline itself is running, a common
 early confusion, see Known Issues).
 
+Before you get much further, skim [Configuration](#configuration--what-to-actually-edit-for-your-own-setup)
+below — it's the one place listing every setting worth personalizing
+(your name for the activity log, which model, an optional Obsidian vault
+path, etc.) instead of grepping through the scripts to find them.
+
+## Configuration — what to actually edit for your own setup
+
+The install steps above get the stack *running*; this section is what to
+personalize so it's running as *your* Vector, not a demo. Everything here
+is an environment variable with a working default, not a hardcoded value
+you need to hunt through source files for — set the ones you care about
+before launching `brain_proxy.py` / `vector_watchdog.py` / `vector_mcp_server.py`
+(export them in your shell profile, or add them to whichever systemd unit
+/ Task Scheduler action starts each script — see [docs/systemd/](./docs/systemd/)
+for where that goes in a unit file).
+
+**Robot pairing itself is not one of these** — that's handled once by
+`venv/bin/python -m anki_vector.configure` (step 3 above), which writes
+`~/.anki_vector/sdk_config.ini`. The variables below are everything *on
+top of* that.
+
+| Variable | Used by | Default | What it's for |
+|---|---|---|---|
+| `VECTOR_ROBOT_NAME` | `vector_mcp_server.py` (dashboard) | `Vector` | Cosmetic — shows up in the `vector_dashboard` tool's output. Purely a label, doesn't affect the actual SDK connection. |
+| `VECTOR_ROBOT_IP` | `vector_mcp_server.py` (dashboard) | `<set VECTOR_ROBOT_IP>` | Same as above — display only. The real connection uses `sdk_config.ini`, not this. |
+| `VECTOR_ROBOT_SERIAL` | `vector_mcp_server.py` (dashboard) | `<set VECTOR_ROBOT_SERIAL>` | Same as above — display only. |
+| `VECTOR_OPERATOR` | all three always-on scripts | `unknown` (`vector` inside `brain_proxy.py` specifically, since those requests are his own voice) | **Set this to your own name/handle.** Every logged action records who did it — this is how the multi-agent logging design (see DEVLOG.md) tells "Mike drove him" from "the n8n schedule did" apart. |
+| `VECTOR_VAULT_DIR` | `vector_mcp_server.py`, `vector_life.py`, `self_improve.py` | tries the real desktop vault path, falls back to `~/vector-mcp/vault_sync/Vector Mind` | Only matters if you're syncing his diary/dashboard/memory writes into your own Obsidian vault. Point it at that vault's folder if you want that; the fallback staging folder works fine standalone if you don't. |
+| `VECTOR_BRAIN_URL` | `brain_proxy.py`, `vector_life.py`, `vector_mcp_server.py` | `http://localhost:11434` | Where Ollama (or LM Studio, if you're on the original desktop-first path) is listening. Only change this if your brain host isn't the same machine, or you're on a non-default port. |
+| `VECTOR_BRAIN_MODEL` | `brain_proxy.py`, `vector_mcp_server.py` | `qwen2.5:3b-instruct` | Which model to use as the conversation brain. Change this once you've pulled a different model — see [Hardware](#hardware) for what your GPU/CPU can actually run. |
+| `VECTOR_PORT` | `brain_proxy.py` | `8590` | The port wire-pod's knowledge-graph endpoint should point at. Only change if `8590` is already taken on your host. |
+| `VECTOR_CUBE_MODEL` | `vector_mcp_server.py` | `~/vector-mcp/cube_dataset/runs/cube/weights/best.pt` | Path to a fine-tuned cube-detection YOLO model, if you've trained one. Falls back to the stock COCO model otherwise — totally optional. |
+| `VECTOR_TV_IP` | `vector_mcp_server.py`, `vector_life.py` | `<set VECTOR_TV_IP>` | Only needed for the optional Fire TV control feature (ADB over WiFi). Leave unset if you don't have/want that. |
+| `VECTOR_ADB` | `vector_mcp_server.py` | auto-detected via `PATH` | Only needed if `adb` isn't already on your system `PATH` and you're using the Fire TV feature. |
+
+**Not yet an env var, still a plain source edit if you want to change
+it**: `vector_personality.py`'s `BASE_PERSONALITY` (his actual character —
+edit this file directly if you want a different personality than the one
+shipped here; it's deliberately centralized in this one file and imported
+by `vector_life.py`, `vector_watchdog.py`, and `brain_proxy.py` so a
+personality change only needs editing once) and `news_digest.py`'s RSS
+feed list (hardcoded, since it's a personal preference list, not
+per-install config).
+
 ## Known issues (the ones that'll bite you too)
 
 The short version — full diagnosis and fixes are in **DEVLOG.md**:
