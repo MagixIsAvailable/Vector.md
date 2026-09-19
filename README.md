@@ -279,7 +279,12 @@ stack to survive a reboot without you needing to SSH in and restart
 things by hand — see the unit files this build actually uses in
 [docs/systemd/](./docs/systemd/) as a starting template.
 
-**On the desktop path instead of a Pi**: there's no systemd, so use
+**Running on Linux but not a Pi** (a spare desktop/server, e.g. Ubuntu
+Server on a mini PC): use the exact same `systemctl --user` instructions
+above, not the Windows section below — "Pi" here just means "a systemd
+Linux host," nothing Pi-specific about it.
+
+**On a Windows desktop instead of a Pi**: there's no systemd, so use
 **Task Scheduler** to run each script "at log on" instead (this is
 exactly how the original Windows-desktop build kept things running before
 the Pi migration) — Task Scheduler → Create Task → Trigger: "At log on" →
