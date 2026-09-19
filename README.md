@@ -365,6 +365,11 @@ The short version — full diagnosis and fixes are in **DEVLOG.md**:
   instead (see `brain_proxy.py`'s `/run/<name>` route) and call that from
   an HTTP Request node.
 
+**Hit something not listed here or in DEVLOG.md?** [Open an
+issue](../../issues/new/choose) — bug reports and feature ideas both
+welcome, see [CONTRIBUTING.md](./CONTRIBUTING.md) for what's useful to
+include.
+
 ## Credits
 
 - [wire-pod](https://github.com/kercre123/wire-pod) by kercre123 and
@@ -374,6 +379,12 @@ The short version — full diagnosis and fixes are in **DEVLOG.md**:
 - [Model Context Protocol](https://modelcontextprotocol.io) — Anthropic
 - [Ultralytics YOLO](https://github.com/ultralytics/ultralytics)
 - [Ollama](https://ollama.com) — local model runtime
+
+## Contributing
+
+Issues, ideas, and PRs are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md)
+for what to check first and how the three-tier architecture affects where
+a fix or feature should live.
 
 ## Support
 

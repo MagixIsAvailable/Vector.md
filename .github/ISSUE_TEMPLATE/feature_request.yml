@@ -1,0 +1,45 @@
+name: Feature request / idea
+description: Suggest something new — a capability, a behavior, a script
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project deliberately keeps Vector's conversation brain
+        *ask-only* — it can request new abilities but never grant itself
+        one. Feature ideas that add a new capability are welcome, but
+        expect discussion about whether/how it should be gated behind
+        human approval, same as everything else here.
+
+  - type: textarea
+    attributes:
+      label: What's the idea?
+      description: What would this let Vector (or an operator) do that isn't possible today?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Why does this matter?
+      description: What's the use case, or what's currently annoying/missing without it?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Where would this live?
+      options:
+        - "Always-on core (direct SDK/behavior)"
+        - "Scheduled layer (n8n-driven)"
+        - "Operator/MCP tool (human-invoked via Claude or another client)"
+        - "Not sure / open to discussion"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Anything you've already tried or sketched out?
+      description: Rough code, a similar project, or prior art — optional but helpful.
+    validations:
+      required: false

@@ -1,0 +1,74 @@
+name: Bug report
+description: Something in the stack (wire-pod, brain_proxy, MCP server, n8n layer) isn't working right
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing this. This is a real hobbyist project running on a
+        Raspberry Pi (or a desktop) talking to a resurrected Vector 1.0 over
+        wire-pod — a lot of failure modes are hardware/network/firmware
+        quirks rather than code bugs, so the questions below exist to help
+        tell those apart quickly. See `DEVLOG.md` first — your issue may
+        already be a documented landmine.
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Which layer is affected?
+      description: >
+        See the README's three-tier architecture. This helps narrow down
+        where to look first.
+      options:
+        - "Always-on core (brain_proxy.py / vector_watchdog.py — direct robot connection)"
+        - "Scheduled layer (n8n / vector_life.py — proactive speech, diary, reflections)"
+        - "Operator control (vector_mcp_server.py / MCP tool calls from Claude or another client)"
+        - "Setup / installation (wire-pod flashing, first-time config)"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Host
+      description: Raspberry Pi 5, desktop, or other? Include OS if relevant.
+      placeholder: "e.g. Raspberry Pi 5, Raspberry Pi OS 64-bit"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What did you expect, and what actually happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or actions taken, in order.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Relevant logs
+      description: >
+        `journalctl -u wirepod.service -n 50`, `journalctl -u brain-proxy.service -n 50`,
+        `journalctl -u vector-watchdog.service -n 50`, or terminal output — whichever
+        applies. Please redact your robot's IP/serial and any LAN details if you'd
+        rather not share them publicly.
+      render: shell
+
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: I checked `DEVLOG.md` and this isn't already a documented/known issue
+          required: true
+        - label: I confirmed the relevant service is actually running (not just that the robot is powered on)
+          required: false
