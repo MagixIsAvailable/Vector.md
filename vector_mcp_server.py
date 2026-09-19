@@ -1593,7 +1593,7 @@ def vector_lift(height: float) -> str:
 # (SLEEP) / 224 (WAKEUP), or 26 only as a generic toggle fallback.
 # Requires an `adb` client: set VECTOR_ADB env var to its path if not on PATH.
 # ---------------------------------------------------------------------------
-_TV_ADB_TARGET = os.environ.get("VECTOR_TV_IP", "<set VECTOR_TV_IP>") + ":5555"
+_TV_ADB_TARGET = _os.environ.get("VECTOR_TV_IP", "<set VECTOR_TV_IP>") + ":5555"
 _TV_KEYS = {
     "home": "3", "back": "4", "up": "19", "down": "20", "left": "21",
     "right": "22", "enter": "66", "volume_up": "24", "volume_down": "25",
