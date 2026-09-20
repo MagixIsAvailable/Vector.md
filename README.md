@@ -234,7 +234,7 @@ venv/bin/pip install mcp ultralytics flask
 ### 5. Run the brain proxy and point wire-pod at it
 
 ```
-venv/bin/python brain_proxy.py
+venv/bin/python core/brain_proxy.py
 ```
 In wire-pod's web UI, set the knowledge-graph provider to "custom" with
 endpoint `http://localhost:8590/v1`.
@@ -320,7 +320,7 @@ Pi ended up being worth the migration).
 From whatever machine runs your AI agent (doesn't have to be the Pi):
 
 ```
-claude mcp add vector --env VECTOR_OPERATOR=<yourname> -- ssh -i <key> <user>@<pi-ip> <pi-venv-path>/python3 <pi-path>/vector_mcp_server.py
+claude mcp add vector --env VECTOR_OPERATOR=<yourname> -- ssh -i <key> <user>@<pi-ip> <pi-venv-path>/python3 <pi-path>/core/vector_mcp_server.py
 ```
 
 (Or run the agent directly on the Pi and skip the SSH wrapper — the SSH

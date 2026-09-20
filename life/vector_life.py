@@ -31,11 +31,16 @@ import argparse
 import json
 import os
 import random
+import sys
 import time
 import urllib.request
 from pathlib import Path
 
 os.environ.setdefault("VECTOR_OPERATOR", "vector")  # HE initiated it
+
+# Repo was split into core/ life/ tools/ folders 2026-09-20 - this file lives
+# in life/ but imports vector_personality (core/), so make it importable.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "core"))
 
 import anki_vector  # noqa: E402
 from anki_vector.util import degrees  # noqa: E402

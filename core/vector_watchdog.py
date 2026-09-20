@@ -64,7 +64,11 @@ from anki_vector.events import Events
 from anki_vector.messaging import protocol
 from anki_vector.util import degrees
 
-sys.path.insert(0, str(Path(__file__).parent))
+# Repo was split into core/ life/ tools/ folders 2026-09-20 - this file lives
+# in core/ but imports from life/ and tools/, so make those importable too.
+_repo_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_repo_root / "life"))
+sys.path.insert(0, str(_repo_root / "tools"))
 import vector_life as vl  # noqa: E402  (reuse mood/log/say/llm_line/etc.)
 import beat_audio as ba  # noqa: E402  (onset detection, Mike's idea 2026-08-20)
 

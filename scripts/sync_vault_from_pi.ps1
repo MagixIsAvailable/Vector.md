@@ -1,8 +1,8 @@
 ﻿# Pulls Vector's staged vault writes (diary, dashboard, snapshots, logbook,
 # reflections, requests) from the Pi's local staging copy into the real
 # Obsidian vault. The Pi can't write directly to this Windows filesystem,
-# so vector_mcp_server.py / self_improve.py / vector_life.py write to
-# ~/vector-mcp/vault_sync/Vector Mind on the Pi instead, and this script
+# so core/vector_mcp_server.py / life/self_improve.py / life/vector_life.py
+# write to ~/vector-mcp/vault_sync/Vector Mind on the Pi instead, and this script
 # reconciles that into the real vault on a schedule (via tar piped over ssh,
 # so directory contents merge in cleanly instead of nesting).
 #

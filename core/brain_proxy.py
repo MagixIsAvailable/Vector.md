@@ -24,8 +24,14 @@ Run:
 
 import json
 import os
+import sys as _sys
+from pathlib import Path as _BootPath
 
 os.environ.setdefault("VECTOR_OPERATOR", "vector")  # requests are HIS voice
+
+# Repo was split into core/ life/ tools/ folders 2026-09-20 - this file lives in
+# core/ but imports vector_life (life/), so make sibling folders importable.
+_sys.path.insert(0, str(_BootPath(__file__).resolve().parent.parent / "life"))
 
 from flask import Flask, request, jsonify  # noqa: E402
 import urllib.request as _ur  # noqa: E402
@@ -587,12 +593,14 @@ def run_script(name):
     import subprocess
     import sys as _sys
 
+    # Repo was split into core/ life/ tools/ folders 2026-09-20 - all of these
+    # maintenance scripts live in life/ now.
     scripts = {
-        "daily": ["self_improve.py", "--mode", "daily"],
-        "weekly": ["self_improve.py", "--mode", "weekly"],
-        "babysitter": ["battery_babysitter.py", "--threshold", "3.8"],
-        "proactive": ["proactive.py", "--cooldown", "25"],
-        "mindspeak": ["speak_mind.py"],
+        "daily": ["life/self_improve.py", "--mode", "daily"],
+        "weekly": ["life/self_improve.py", "--mode", "weekly"],
+        "babysitter": ["life/battery_babysitter.py", "--threshold", "3.8"],
+        "proactive": ["life/proactive.py", "--cooldown", "25"],
+        "mindspeak": ["life/speak_mind.py"],
     }
     if name not in scripts:
         return jsonify({"error": f"unknown script '{name}'. "

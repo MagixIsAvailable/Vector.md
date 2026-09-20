@@ -6,7 +6,7 @@ After=network-online.target
 Type=simple
 WorkingDirectory=/home/<you>/vector-mcp
 Environment=VECTOR_BRAIN_MODEL=qwen2.5:3b-instruct
-ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/brain_proxy.py
+ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/core/brain_proxy.py
 Restart=on-failure
 RestartSec=5
 

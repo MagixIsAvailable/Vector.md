@@ -27,7 +27,9 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+# Repo was split into core/ life/ tools/ folders 2026-09-20 - this file lives
+# in tools/ but imports vector_mcp_server (core/), so make it importable.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "core"))
 import vector_mcp_server as vms  # noqa: E402  (reuse animation list + _connect)
 
 

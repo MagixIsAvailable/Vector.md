@@ -19,12 +19,17 @@ Run:
 """
 
 import argparse
+import sys
 import time
+from pathlib import Path
 
 import anki_vector
 from anki_vector.util import degrees, distance_mm, speed_mmps
 
-import vector_mcp_server as vms
+# Repo was split into core/ life/ tools/ folders 2026-09-20 - this file lives
+# in life/ but imports vector_mcp_server (core/), so make it importable.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "core"))
+import vector_mcp_server as vms  # noqa: E402
 
 
 def patrol_leg(robot, leg_num):

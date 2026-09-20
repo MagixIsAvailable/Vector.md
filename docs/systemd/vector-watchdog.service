@@ -7,7 +7,7 @@ Type=notify
 NotifyAccess=main
 WatchdogSec=60
 WorkingDirectory=/home/<you>/vector-mcp
-ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/vector_watchdog.py
+ExecStart=/home/<you>/vector-mcp/venv/bin/python3 /home/<you>/vector-mcp/core/vector_watchdog.py
 Restart=on-failure
 RestartSec=10
 

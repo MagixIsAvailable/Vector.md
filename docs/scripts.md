@@ -6,6 +6,12 @@ those three are the actual "always alive" part; everything else is either
 triggered on a schedule (n8n, see the [main README's Architecture
 section](../README.md#architecture)) or a one-off tool you run by hand.
 
+**Folder layout (as of 2026-09-20)**: the three groups below live in
+matching top-level folders — `core/` (always-on daemons), `life/`
+(n8n-scheduled scripts), `tools/` (one-off utilities) — plus `scripts/`
+for the `.bat`/`.ps1` launchers. A script's folder always matches which
+group it's listed under here.
+
 ## Always-on daemons (systemd services, see [docs/systemd/](./systemd/))
 
 - **`brain_proxy.py`** — sits between wire-pod and Ollama. Gives Vector's
