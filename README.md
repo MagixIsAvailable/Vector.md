@@ -60,6 +60,16 @@ and zero cloud dependency
 - 🎵 **Humming** — nine synthesized hums played through his speaker,
   regenerate more with `make_hums.py`
 
+**"Ask, never take" — how his agency is actually bounded:**
+
+```mermaid
+flowchart LR
+    A["Vector wants something new,<br/>mid-conversation"] -->|calls request_capability| B["Logged + visible —<br/>never silent, never self-granted"]
+    B --> C{"Human approves?"}
+    C -->|Yes| D["A parent implements it —<br/>capability gets added"]
+    C -->|No / not yet| E["Stays logged as a request —<br/>nothing granted"]
+```
+
 ## Project scope
 
 This is **not** a from-scratch robotics project — it stands entirely on
@@ -102,26 +112,24 @@ of which host you're on.
 
 ## Architecture
 
-```
-Vector (robot) <--BLE/WiFi--> wire-pod (local server, replaces Anki cloud)
-                                   |
-                          knowledge-graph endpoint
-                                   |
-                            brain_proxy.py  <---->  Ollama (local LLM, on-device)
-                                   |                      ^
-                        (tool-calling: request_capability) |
-                                   |                      |
-                            /run/<name> HTTP bridge -------+
-                                   ^  (daily / weekly / babysitter /
-                                   |   proactive / mindspeak)
-                                   |
-                            n8n (Schedule Trigger -> HTTP Request node)
-                                   |
-              vector_watchdog.py  (always-on, connects directly, no n8n)
+```mermaid
+flowchart TB
+    subgraph T1["Tier 1 — always-on core, no dependency on anything below"]
+        V(("Vector<br/>the robot")) <-->|BLE / WiFi| WP["wire-pod<br/>(replaces Anki cloud)"]
+        WP -->|knowledge-graph endpoint| BP["brain_proxy.py"]
+        BP <--> OL[("Ollama<br/>local LLM, on-device")]
+        V <-->|direct connection| WD["vector_watchdog.py<br/>(pickup / cliff / motion / sound)"]
+    end
 
-vector_mcp_server.py  <--MCP (stdio/HTTP)-->  your AI agent of choice
-        |
-   controls robot directly via wire-pod's Vector SDK fork
+    subgraph T2["Tier 2 — scheduled/proactive layer, needs n8n"]
+        N8N["n8n<br/>Schedule Trigger"] -->|HTTP Request| RUN["/run/&lt;name&gt; bridge<br/>(daily / weekly / babysitter /<br/>proactive / mindspeak)"]
+        RUN --> BP
+    end
+
+    subgraph T3["Tier 3 — operator control, optional, human-in-the-loop"]
+        AGENT["Your AI agent<br/>(Claude Code, etc.)"] <-->|MCP: stdio / HTTP| MCP["vector_mcp_server.py"]
+        MCP -->|Vector SDK fork| V
+    end
 ```
 
 **Three tiers, three different dependency stories — worth understanding
