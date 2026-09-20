@@ -2,6 +2,16 @@
 
 [![Buy Me a Coffee](https://img.shields.io/badge/buy%20me%20a-coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/magixb)
 
+> **Trademark notice**: "Vector," "Anki," and related names/marks are the
+> property of their respective owners (Digital Dream Labs / Anki). This is
+> an independent, unofficial, non-commercial hobbyist project, not
+> affiliated with, endorsed by, or sponsored by either company. It builds
+> entirely on top of the separately-maintained, independent
+> [wire-pod](https://github.com/kercre123/wire-pod) firmware project — no
+> proprietary firmware, cloud service, or official SDK is redistributed
+> here (see [LICENSE](./LICENSE) for the one small vendored-code
+> exception, correctly attributed to its original author).
+
 Resurrect an Anki Vector 1.0 robot (orphaned when Anki went bankrupt in
 2019) using [wire-pod](https://github.com/kercre123/wire-pod), then give
 him a real local AI brain — no cloud, no subscriptions, no Anki servers,
