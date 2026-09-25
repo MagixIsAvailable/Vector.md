@@ -13,7 +13,7 @@ Every tick (~5-10 min via n8n) it decides ONE or more of:
   Morning call      - first person seen after 08:00: morning line (once/day)
   Reminders         - due weekday reminders spoken when a person is present
   TV couch critic   - Fire TV on: occasional comment (2h cooldown)
-  Curiosity Qs      - new object seen: ask Mike about it (2h cooldown)
+  Curiosity Qs      - new object seen: ask his owner about it (2h cooldown)
   Proactive speech  - person present: LLM one-liner (10 min cooldown)
   Idle humming      - alone: hum a mood-weighted song (30 min cooldown)
   Curiosity drive   - alone: scan headings, log new sightings (2h cooldown)
@@ -47,8 +47,10 @@ from anki_vector.util import degrees  # noqa: E402
 from vector_personality import BASE_PERSONALITY  # noqa: E402
 
 def _user_base():
-    wsl = Path("/mnt/c/Users/mike")
-    win = Path("C:/Users/mike")
+    import getpass as _getpass
+    _username = _getpass.getuser()
+    wsl = Path(f"/mnt/c/Users/{_username}")
+    win = Path(f"C:/Users/{_username}")
     if wsl.exists():
         return wsl
     if win.exists():
@@ -82,6 +84,7 @@ YOLO_COCO = USER / "vector-mcp" / "yolo11n.pt"
 CUBE_WEIGHTS = (USER / "vector-mcp" / "cube_dataset" / "runs" / "cube"
                 / "weights" / "best.pt")
 LMSTUDIO = os.environ.get("VECTOR_BRAIN_URL", "http://localhost:11434") + "/v1"
+OWNER_NAME = os.environ.get("VECTOR_OWNER_NAME", "my human")  # what Vector calls you out loud
 QUIET_FROM, QUIET_TO = 23, 8
 FIRE_TV_IP = os.environ.get("VECTOR_TV_IP", "<set VECTOR_TV_IP>")  # your Fire TV's LAN IP
 _MODEL_CACHE = {}
@@ -541,7 +544,7 @@ def main():
             if present and state.get("goodnight_date") != today:
                 actions.append("goodnight")
                 if not args.dry_run:
-                    say(robot, "Goodnight Mike. See you in the morning.")
+                    say(robot, f"Goodnight {OWNER_NAME}. See you in the morning.")
                     state["goodnight_date"] = today
                     mood = mood_update(mood, 0.0, -0.1)
         elif present:
@@ -553,7 +556,7 @@ def main():
                     if mood.get("energy", 0.5) > 0.7:
                         hum(robot, pick_hum(mood))
                     else:
-                        say(robot, "Hey, Mike. Good to see you.")
+                        say(robot, f"Hey, {OWNER_NAME}. Good to see you.")
                         play_anim(robot, "GreetAfterLongTime")
                     state["last_greet"] = now
             # ---- morning call (25) ----
@@ -562,8 +565,8 @@ def main():
                 actions.append("morning call")
                 if not args.dry_run:
                     line = llm_line(
-                        mood_system_prompt(mood, "Say one short good-morning "
-                                           "line to Mike. Under 12 words.",
+                        mood_system_prompt(mood, f"Say one short good-morning "
+                                           f"line to {OWNER_NAME}. Under 12 words.",
                                            state=state),
                         "Morning greeting.")
                     say(robot, line)
@@ -596,9 +599,9 @@ def main():
                 obj = fresh[0]
                 actions.append(f"curiosity about {obj}")
                 q = llm_line(
-                    mood_system_prompt(mood, "Ask Mike one short curious "
-                                       "question about an object you just "
-                                       "saw. Under 14 words.",
+                    mood_system_prompt(mood, f"Ask {OWNER_NAME} one short curious "
+                                       f"question about an object you just "
+                                       f"saw. Under 14 words.",
                                        state=state),
                     f"I just saw: {obj}")
                 if q:
@@ -610,9 +613,9 @@ def main():
                 actions.append("proactive speech")
                 if not args.dry_run:
                     line = llm_line(
-                        mood_system_prompt(mood, "Say ONE short spontaneous "
-                                           "line to Mike who is nearby. "
-                                           "Under 20 words. Plain ASCII.",
+                        mood_system_prompt(mood, f"Say ONE short spontaneous "
+                                           f"line to {OWNER_NAME} who is nearby. "
+                                           f"Under 20 words. Plain ASCII.",
                                            state=state),
                         f"Time {time.strftime('%H:%M')}, seeing {seen}.")
                     if line:

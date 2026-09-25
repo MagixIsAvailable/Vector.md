@@ -46,11 +46,13 @@ from pathlib import Path as _Path
 
 
 def _user_base():
-    """Windows-native paths (C:/Users/mike), the WSL mirror (/mnt/c/...),
+    """Windows-native paths (C:/Users/<you>), the WSL mirror (/mnt/c/...),
     or a native-Linux host (Raspberry Pi etc, running under its own home
     dir instead of mirroring the Windows desktop)."""
-    wsl = _Path("/mnt/c/Users/mike")
-    win = _Path("C:/Users/mike")
+    import getpass as _getpass
+    _username = _getpass.getuser()
+    wsl = _Path(f"/mnt/c/Users/{_username}")
+    win = _Path(f"C:/Users/{_username}")
     if wsl.exists():
         return wsl
     if win.exists():
@@ -645,12 +647,16 @@ def vector_mind_sync() -> dict:
 
 # --- State signals -------------------------------------------------------
 # Vector shows WHO is driving him (eye colour) and WHAT phase he is in
-# (animation). Mike asked for this so the robot is never a silent black box.
+# (animation), so he's never a silent black box about who's in control.
 
-OPERATOR_EYES = {          # hue 0..1 - add one entry per agent/human you run
+OWNER_NAME = _os.environ.get("VECTOR_OWNER_NAME", "my human")  # spoken/prompt text
+OWNER_TAG = _os.environ.get("VECTOR_OWNER_TAG", "owner")        # short operator-log handle
+
+OPERATOR_EYES = {          # hue 0..1 - add one entry per agent/human you run,
+                           # keyed by whatever value you set VECTOR_OPERATOR to
     "claude": 0.60,        # blue
     "n8n": 0.08,           # orange
-    "mike": 0.33,          # green
+    OWNER_TAG: 0.33,       # green - your own operator tag, from VECTOR_OWNER_TAG
     "unknown": 0.50,       # teal (Vector's default-ish)
 }
 
@@ -1155,7 +1161,7 @@ def vector_map(limit: int = 300) -> str:
 def vector_quiz() -> str:
     """Vector asks a riddle (LLM-generated). Answer is logged to
     memory/quiz_log.jsonl for scorekeeping later. The voice loop
-    (Mike answering out loud) is a future step."""
+    (his owner answering out loud) is a future step."""
     q = _llm_line(
         "You are Vector. Invent ONE short riddle with a single clear "
         "answer. Reply exactly as: RIDDLE: <riddle> | ANSWER: <answer>",
@@ -1209,14 +1215,15 @@ def vector_watch_for_frights(seconds: float = 60.0) -> dict:
 def vector_signal(state: str, set_operator_eyes: bool = False) -> str:
     """Make Vector visibly/audibly show what he is doing right now.
 
-    Use this to keep Mike informed during longer operations - e.g. signal
-    'thinking' before a slow step, 'success' or 'error' when it ends.
+    Use this to keep his owner informed during longer operations - e.g.
+    signal 'thinking' before a slow step, 'success' or 'error' when it ends.
 
     Args:
         state: thinking | listening | looking | success | error | greet |
                sleep | wake | alert
         set_operator_eyes: also set his eye colour to the calling operator's
-            colour (e.g. claude=blue, n8n=orange, mike=green - add your own).
+            colour (e.g. claude=blue, n8n=orange - add your own via
+            OPERATOR_EYES / VECTOR_OPERATOR).
     """
     anim = SIGNAL_ANIMS.get(state)
     if not anim:
@@ -1252,16 +1259,16 @@ def vector_whose_eyes() -> dict:
 
 @tool
 def vector_human_log(what: str, kind: str = "decision") -> str:
-    """Log MIKE's contribution to Vector's development - the human half of the
-    record. Agents MUST call this whenever Mike makes a decision, has an idea,
-    asks for a capability, approves a proposal, or does something physical for
-    Vector (charging, moving, enrolling his face).
+    """Log the owner's contribution to Vector's development - the human half
+    of the record. Agents MUST call this whenever the owner makes a decision,
+    has an idea, asks for a capability, approves a proposal, or does
+    something physical for Vector (charging, moving, enrolling his face).
 
     Vector has a human parent (decides) and one or more AI agents (build).
     Without this, the logbook only shows the machines and history looks wrong.
 
     Args:
-        what: What Mike did/decided/asked for, in his own terms.
+        what: What the owner did/decided/asked for, in their own terms.
             e.g. "asked for a dashboard with battery, age and mind graph"
         kind: one of decision | idea | approval | physical | teaching
     """
@@ -1270,7 +1277,7 @@ def vector_human_log(what: str, kind: str = "decision") -> str:
 
     now = _t.time()
     rec = {"ts": now, "time_str": _t.strftime("%Y-%m-%d %H:%M:%S"),
-           "operator": "mike", "tool": f"human_{kind}",
+           "operator": OWNER_TAG, "tool": f"human_{kind}",
            "args": {"what": what[:300]}, "status": "ok", "secs": 0.0}
     af = Path(_ACTIONS_FILE)
     af.parent.mkdir(parents=True, exist_ok=True)
@@ -1283,27 +1290,27 @@ def vector_human_log(what: str, kind: str = "decision") -> str:
     lb.parent.mkdir(parents=True, exist_ok=True)
     existing = lb.read_text(encoding="utf-8") if lb.exists() else (
         "---\ntags: [vector-mind, logbook]\n---\n# Vector Logbook\n\n"
-        "Who did what with Vector, when. Operators: mike, claude, n8n, ...\n")
+        f"Who did what with Vector, when. Operators: {OWNER_TAG}, claude, n8n, ...\n")
     day_header = "## " + _t.strftime("%Y-%m-%d")
     if day_header not in existing:
         existing += f"\n{day_header}\n\n"
     lb.write_text(
-        existing + f"- {_t.strftime('%H:%M:%S')} {icon} **mike** ({kind}) — {what}\n",
+        existing + f"- {_t.strftime('%H:%M:%S')} {icon} **{OWNER_TAG}** ({kind}) — {what}\n",
         encoding="utf-8")
-    return f"Logged Mike's {kind}: {what}"
+    return f"Logged {OWNER_NAME}'s {kind}: {what}"
 
 
 @tool
 def vector_request_capability(what: str, why: str) -> str:
     """Vector asks one of his parents (whichever AI agent maintains him) for a new capability
     he doesn't have. This does NOT grant anything by itself - it only writes
-    a visible request that a parent must review with Mike before building or
-    approving it. This is Vector's ONLY path to gaining new abilities: he can
-    ask, never take.
+    a visible request that a parent must review with his owner before building
+    or approving it. This is Vector's ONLY path to gaining new abilities: he
+    can ask, never take.
 
     Args:
         what: The capability he wants, in his own words.
-            e.g. "I want to know how many fingers Mike is holding up"
+            e.g. "I want to know how many fingers my owner is holding up"
         why: Why he wants it / what happened that made him ask.
     """
     from pathlib import Path
@@ -1314,8 +1321,8 @@ def vector_request_capability(what: str, why: str) -> str:
     existing = req_file.read_text(encoding="utf-8") if req_file.exists() else (
         "---\ntags: [vector-mind]\n---\n# Vector's Requests\n\n"
         "Vector cannot grant himself anything. He can only ask.\n"
-        "A parent (whichever agent maintains him) reviews with Mike, then either implements\n"
-        "it (ticks the box + note) or explains why not.\n\n")
+        "A parent (whichever agent maintains him) reviews with his owner, then either\n"
+        "implements it (ticks the box + note) or explains why not.\n\n")
     entry = (f"## {_time_mod.strftime('%Y-%m-%d %H:%M:%S')}\n"
              f"- [ ] **Wants:** {what}\n"
              f"  **Because:** {why}\n\n")
@@ -1332,19 +1339,20 @@ def vector_request_capability(what: str, why: str) -> str:
         lb_existing + f"- {_time_mod.strftime('%H:%M:%S')} 🙋 **vector** "
         f"(request) — wants: {what[:100]}\n", encoding="utf-8")
 
-    return ("Request logged for your parents to review with Mike. "
+    return (f"Request logged for your parents to review with {OWNER_NAME}. "
             "You don't have this yet, but you asked, which is the right move.")
 
 
 @tool
 def vector_approve_request(approved: bool, note: str = "") -> str:
-    """Record Mike's verbal yes/no on Vector's most recent pending request.
-    Called by the brain proxy when it detects a clear approval/decline in
-    Mike's spoken reply right after Vector asked for something - NEVER
-    called by Vector's own model (he cannot approve himself).
+    """Record the owner's verbal yes/no on Vector's most recent pending
+    request. Called by the brain proxy when it detects a clear
+    approval/decline in the owner's spoken reply right after Vector asked
+    for something - NEVER called by Vector's own model (he cannot approve
+    himself).
 
     Args:
-        approved: True if Mike said yes, False if he declined.
+        approved: True if the owner said yes, False if they declined.
         note: Optional context, e.g. the pending request's "what".
     """
     from pathlib import Path
@@ -1359,7 +1367,7 @@ def vector_approve_request(approved: bool, note: str = "") -> str:
                 lines[i] = lines[i].replace("- [ ]", f"- [{mark}]", 1)
                 verdict = ("APPROVED" if approved else "DECLINED")
                 lines.insert(i + 1,
-                    f"  **Mike (voice):** {verdict} — "
+                    f"  **{OWNER_NAME} (voice):** {verdict} — "
                     f"{_time_mod.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 break
         req_file.write_text("".join(lines), encoding="utf-8")

@@ -8,7 +8,7 @@ Two modes:
   --mode weekly  Weekly reflection: reviews the week (logbook, sightings,
                  teachings), then PROPOSES improvements as checkboxes in
                  <vault>/Vector Mind/reflections/YYYY-Wnn.md
-                 Nothing is auto-applied - Mike ticks a box, an agent
+                 Nothing is auto-applied - the owner ticks a box, an agent
                  implements it. That's the human approval gate.
 
 Uses local Ollama (http://localhost:11434) if a model is available;
@@ -17,15 +17,20 @@ falls back to a stats-only template otherwise. Fully local either way.
 
 import argparse
 import json
+import os
 import time
 import urllib.request
 from collections import Counter
 from pathlib import Path
 
+OWNER_NAME = os.environ.get("VECTOR_OWNER_NAME", "my human")  # what Vector calls you out loud
+
 
 def _user_base():
-    wsl = Path("/mnt/c/Users/mike")
-    win = Path("C:/Users/mike")
+    import getpass as _getpass
+    _username = _getpass.getuser()
+    wsl = Path(f"/mnt/c/Users/{_username}")
+    win = Path(f"C:/Users/{_username}")
     if wsl.exists():
         return wsl
     if win.exists():
@@ -226,8 +231,8 @@ anything already captured in the existing digest):
 {diary_blob if diary_blob else "(no diary entries this week)"}
 
 Write the UPDATED digest. Plain factual bullet points, third person
-("Vector's favorite human is Mike" not "I like Mike"), under 150 words
-total. Keep durable facts from the old digest that are still true, add
+("Vector's favorite human is {OWNER_NAME}" not "I like {OWNER_NAME}"), under
+150 words total. Keep durable facts from the old digest that are still true, add
 genuinely new durable facts from this week, drop anything trivial or
 superseded. Output ONLY the bullet points, nothing else - no preamble."""
 
@@ -261,7 +266,7 @@ def run_weekly():
     out = VAULT_MIND / "reflections" / f"{week}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    prompt = f"""You are Vector, a robot operated by AI agents and owned by Mike.
+    prompt = f"""You are Vector, a robot operated by AI agents and owned by {OWNER_NAME}.
 Review your week using ONLY this real data, then propose 3-5 concrete
 improvements to your abilities or routines. Format:
 

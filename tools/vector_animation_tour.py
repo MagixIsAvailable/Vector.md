@@ -59,7 +59,7 @@ def main():
             print(i, n)
         return
 
-    captures = Path("C:/Users/mike/vector-mcp/captures")
+    captures = vms._USER / "vector-mcp" / "captures"
     captures.mkdir(exist_ok=True)
     manifest_path = captures / f"anim_tour_{time.strftime('%Y%m%d_%H%M%S')}.csv"
 

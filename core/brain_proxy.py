@@ -45,6 +45,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer  # noqa: E4
 app = Flask(__name__)
 
 LMSTUDIO = os.environ.get("VECTOR_BRAIN_URL", "http://localhost:11434") + "/v1"
+OWNER_NAME = os.environ.get("VECTOR_OWNER_NAME", "my human")  # what Vector calls you out loud
 
 _PENDING_FILE = vms._USER / "vector-mcp" / "memory" / "pending_request.json"
 
@@ -113,7 +114,7 @@ def _clear_pending():
 
 
 def _check_approval(user_text):
-    """If there's a pending request and Mike's reply is a clear yes/no,
+    """If there's a pending request and the owner's reply is a clear yes/no,
     record it. Returns a note to inject into context, or None."""
     pending = _get_pending()
     if not pending:
@@ -126,10 +127,10 @@ def _check_approval(user_text):
     vms.vector_approve_request(approved=is_yes, note=pending["what"])
     _clear_pending()
     if is_yes:
-        return (f"SYSTEM NOTE: Mike just gave verbal permission for: "
+        return (f"SYSTEM NOTE: {OWNER_NAME} just gave verbal permission for: "
                 f"'{pending['what']}'. Thank him briefly and say a parent "
                 f"will build it soon.")
-    return (f"SYSTEM NOTE: Mike just declined: '{pending['what']}'. "
+    return (f"SYSTEM NOTE: {OWNER_NAME} just declined: '{pending['what']}'. "
             f"Accept it gracefully in one short line, no sulking.")
 
 
@@ -226,7 +227,7 @@ TOOLS = [{
         "description": (
             "Ask one of your parents (whichever AI agent maintains you) for a new ability "
             "you don't currently have. This does NOT grant it - it only logs "
-            "a visible request they review with Mike. Use this when you "
+            f"a visible request they review with {OWNER_NAME}. Use this when you "
             "genuinely need to do something you can't, e.g. actually seeing "
             "an image, remembering something long-term you can't yet, or any "
             "physical action outside conversation. Do not overuse - only for "
@@ -248,7 +249,7 @@ TOOLS = [{
         "description": (
             "Look through your camera right now and describe what you see. "
             "Use this when someone asks what you see, what's in front of you, "
-            "how many fingers, what Mike is holding, or anything visual. "
+            f"how many fingers, what {OWNER_NAME} is holding, or anything visual. "
             "Read-only - it just tells you what objects are in view."
         ),
         "parameters": {"type": "object", "properties": {}},
@@ -540,7 +541,7 @@ def chat():
                 why = args.get("why", "(unspecified)")
                 out = vms.vector_request_capability(what=what, why=why)
                 _set_pending(what, why)
-                out += (" Tell Mike out loud what you want and why, then "
+                out += (f" Tell {OWNER_NAME} out loud what you want and why, then "
                         "ask him plainly: 'Can I learn this?'")
             elif fn == "look":
                 try:
@@ -551,7 +552,7 @@ def chat():
                         f"{d['object']} ({d['confidence']:.2f})" for d in dets)
                     out = ("You just looked through your camera. You see: "
                            + (txt or "nothing recognizable")
-                           + ". Describe it simply to Mike, or answer his "
+                           + f". Describe it simply to {OWNER_NAME}, or answer his "
                              "question about it.")
                 except Exception as e:
                     out = f"look failed: {e}"
